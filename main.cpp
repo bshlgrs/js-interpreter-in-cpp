@@ -3,244 +3,16 @@
 #include <list>
 #include <vector>
 #include <math.h>
-#include "JS_things.h"
+#include "jsvalue.h"
 
 using namespace std;
-
-class JSValue {
-public:
-    virtual std::string toString() = 0;
-    virtual JSValue * operate(std::string op, JSValue *other) = 0;
-    virtual JSValue * rOperateWithNumber(std::string op, JSNumber *left) = 0;
-    virtual JSValue * rOperateWithUndefined(std::string op) = 0;
-    virtual JSValue * get(std::string key) {
-        return new JSUndefined;
-    };
-    virtual bool isTruthy() = 0;
-    virtual JSValue * call(std::vector<JSValue *> args) {
-        cout << "you can't call " << toString() << " :( \n";
-        exit(532);
-    }
-};
-
-
-
-class JSNumber : public JSValue {
-public:
-    double value;
-
-    JSNumber(double value) : value(value) {}
-
-    string toString() {
-        return to_string(value);
-    }
-
-    JSValue *operate(string op, JSValue *right) {
-        return right->rOperateWithNumber(op, this);
-    }
-
-    JSValue *rOperateWithUndefined(string op, JSNumber *right) {
-        return new JSNumber(NAN);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
-        if (op == "+")
-            return new JSNumber(left->value + value);
-        else if (op == "-")
-            return new JSNumber(left->value - value);
-        else if (op == "*")
-            return new JSNumber(left->value * value);
-        else if (op == "/")
-            return new JSNumber(left->value / value);
-        else if (op == "==")
-            return new JSNumber(left->value == value);
-        else if (op == "<")
-            return new JSNumber(left->value < value);
-        else
-            exit(154);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        if (op == "+")
-            return new JSNumber(NAN);
-        else if (op == "-")
-            return new JSNumber(NAN);
-        else if (op == "*")
-            return new JSNumber(NAN);
-        else if (op == "/")
-            return new JSNumber(NAN);
-        else if (op == "==")
-            return makeJSBool(false);
-        else if (op == "<")
-            return makeJSBool(false);
-        else
-            exit(154);
-    }
-
-    bool isTruthy() {
-        return value != 0;
-    }
-};
-
-class JSUndefined : public JSValue {
-public:
-    string toString() {
-        return "undefined";
-    }
-
-    JSValue *operate(string op, JSValue *right) {
-        return right->rOperateWithUndefined(op);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
-        return new JSNumber(NAN);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        exit(354);
-    }
-
-    bool isTruthy() {
-        return false;
-    }
-};
-
-JSUndefined *jsUndefined = new JSUndefined;
-
-class JSObject : public JSValue {
-    std::map<string, JSValue*> fields;
-
-public:
-    string toString() {
-        return "object<...>";
-    }
-
-    // these are wrong :/
-    JSValue *operate(string op, JSValue *right) {
-        return right->rOperateWithUndefined(op);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
-        return new JSNumber(NAN);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        exit(354);
-    }
-
-    bool isTruthy() {
-        return !fields.empty();
-    }
-
-    JSValue *get(string field) {
-        if (fields.count(field)) {
-            fields[field]
-        }
-    }
-};
-
-class JSBool : public JSValue {
-    bool value;
-public:
-    JSBool(bool value) : value(value) {}
-
-    string toString() {
-        return to_string(value);
-    }
-
-    JSValue *operate(string op, JSValue *right) {
-        return right->rOperateWithNumber(op, new JSNumber(value));
-    }
-
-    JSValue *rOperateWithUndefined(string op, JSNumber *right) {
-        exit(123);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
-        if (op == "+")
-            return new JSNumber(left->value + (int) value);
-        else if (op == "-")
-            return new JSNumber(left->value - (int) value);
-        else if (op == "*")
-            return new JSNumber(left->value * (int) value);
-        else if (op == "/")
-            return new JSNumber(left->value / (int) value);
-        else if (op == "==")
-            return new JSNumber(left->value == (int) value);
-        else if (op == "<")
-            return new JSNumber(left->value < (int) value);
-        else
-            exit(154);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        if (op == "+")
-            return new JSNumber(NAN);
-        else if (op == "-")
-            return new JSNumber(NAN);
-        else if (op == "*")
-            return new JSNumber(NAN);
-        else if (op == "/")
-            return new JSNumber(NAN);
-        else if (op == "==")
-            return new JSBool(false);
-        else if (op == "<")
-            return new JSBool(false);
-        else
-            exit(154);
-    }
-
-    bool isTruthy() {
-        return value;
-    }
-};
-
-JSValue *makeJSBool(bool value) {
-    return new JSBool(value);
-}
-
-class JSExternalFunction : public JSValue {
-    JSFunction function;
-public:
-    JSExternalFunction(JSFunction function): function(function) { };
-
-    string toString() {
-        return "function<something>";
-    }
-
-    JSValue *operate(string op, JSValue *right) {
-        exit(123);
-    }
-
-    JSValue *rOperateWithUndefined(string op, JSNumber *right) {
-        exit(123);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
-        exit(154);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        exit(154);
-    }
-
-    JSValue * call(std::vector<JSValue *> args) {
-        return function(args);
-    }
-
-    bool isTruthy() {
-        return true;
-    }
-
-
-};
 
 JSValue *log(std::vector<JSValue *> args) {
     for (JSValue * value : args) {
         cout << value->toString() << "; ";
     }
     cout << endl;
-    return jsUndefined;
+    return &jsUndefined;
 }
 
 class Scope {
@@ -382,6 +154,24 @@ public:
     }
 };
 
+class JSFieldAccessExpression : public JSExpression {
+    JSExpression * lhs;
+    JSExpression * rhs;
+
+public:
+    JSFieldAccessExpression(JSExpression *lhs, JSExpression *rhs): lhs(lhs), rhs(rhs) { }
+
+    JSValue *evaluate(Scope *scope) {
+        JSValue *lhsResult = lhs->evaluate(scope);
+        JSValue *rhsResult = rhs->evaluate(scope);
+        return lhsResult->get(rhsResult->toString());
+    }
+
+    string toString() {
+        return lhs->toString() + "[" + rhs->toString() + "]";
+    }
+};
+
 class JSStatement {
     virtual void run(Scope *scope) = 0;
 
@@ -433,11 +223,11 @@ public:
     }
 };
 
-class JSFunctionBody {
+class JSProgram {
     vector<JSStatement *> code;
 
 public:
-    JSFunctionBody(vector<JSStatement *> code): code(code) {}
+    JSProgram(vector<JSStatement *> code): code(code) {}
 
     void run(Scope *scope) {
         for (JSStatement *statement : code) {
@@ -457,7 +247,12 @@ public:
 
 int main() {
     Scope *scope = new Scope();
-    scope->setValue("log", new JSExternalFunction(&log));
+
+    std::map<string, JSValue*> consoleMethods;
+    consoleMethods["log"] = new JSExternalFunction(&log);
+    JSObject *console = new JSObject(consoleMethods);
+
+    scope->setValue("console", console);
 
     JSStatement * firstLine = (JSStatement *) new JSExpressionStatement(new JSAssignmentExpression("x",
          (JSExpression *) new JSValueExpression(new JSNumber(2))));
@@ -475,7 +270,7 @@ int main() {
 
     JSStatement * lastLine = (JSStatement *) new JSExpressionStatement(
             new JSFunctionCall(
-                    new JSVariableExpression("log"),
+                    new JSFieldAccessExpression(new JSVariableExpression("console"), new JSValueExpression(new JSString("log"))),
                     logArgs)
     );
 
@@ -489,7 +284,7 @@ int main() {
     programBody.push_back(firstLine);
     programBody.push_back((JSStatement *) whileStatement);
 
-    JSFunctionBody * program = new JSFunctionBody(programBody);
+    JSProgram * program = new JSProgram(programBody);
 
     cout << program->toString();
 
