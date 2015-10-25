@@ -7,13 +7,7 @@
 
 using namespace std;
 
-JSValue *log(std::vector<JSValue *> args) {
-    for (JSValue * value : args) {
-        cout << value->toString() << "; ";
-    }
-    cout << endl;
-    return &jsUndefined;
-}
+
 
 class Scope {
     Scope *parent = NULL;
@@ -249,28 +243,28 @@ int main() {
     Scope *scope = new Scope();
 
     std::map<string, JSValue*> consoleMethods;
-    consoleMethods["log"] = new JSExternalFunction(&log);
-    JSObject *console = new JSObject(consoleMethods);
+    consoleMethods["log"] = logFunction;
+    JSValue *console = object(consoleMethods);
 
     scope->setValue("console", console);
 
     JSStatement * firstLine = (JSStatement *) new JSExpressionStatement(new JSAssignmentExpression("x",
-         (JSExpression *) new JSValueExpression(new JSNumber(2))));
+         (JSExpression *) new JSValueExpression(number(2))));
 
     JSStatement * increment = (JSStatement *) new JSExpressionStatement(
             new JSAssignmentExpression(
                     "x",
-                    new JSBinaryOperator("+", new JSValueExpression(new JSNumber(3)), new JSVariableExpression("x"))));
+                    new JSBinaryOperator("+", new JSValueExpression(number(3)), new JSVariableExpression("x"))));
 
 
-    JSExpression * condition = new JSBinaryOperator("<", new JSVariableExpression("x"), new JSValueExpression(new JSNumber(10)));
+    JSExpression * condition = new JSBinaryOperator("<", new JSVariableExpression("x"), new JSValueExpression(number(10)));
 
     vector<JSExpression *> logArgs;
     logArgs.push_back(new JSVariableExpression("x"));
 
     JSStatement * lastLine = (JSStatement *) new JSExpressionStatement(
             new JSFunctionCall(
-                    new JSFieldAccessExpression(new JSVariableExpression("console"), new JSValueExpression(new JSString("log"))),
+                    new JSFieldAccessExpression(new JSVariableExpression("console"), new JSValueExpression(jsString("log"))),
                     logArgs)
     );
 

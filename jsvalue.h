@@ -7,15 +7,37 @@
 
 #include <vector>
 
-class JSValue;
+class JSValue {
+public:
+    virtual std::string toString() = 0;
+    virtual JSValue * operate(std::string op, JSValue *other) = 0;
+    virtual JSValue * rOperateWithNumber(std::string op, JSValue *left) = 0;
+    virtual JSValue * rOperateWithUndefined(std::string op) = 0;
+    virtual JSValue * get(std::string key) = 0;
+    virtual JSValue * set(std::string key, JSValue *value) {
+        exit(123);
+    }
+    virtual bool isTruthy() = 0;
+    virtual JSValue * call(std::vector<JSValue *> args) {
+        exit(532);
+    }
+};
 
 class JSNumber;
+
 class JSUndefined;
+class JSExternalFunction;
+class JSObject;
+
+JSValue * number(double value);
+JSValue * jsString(std::string value);
+JSValue * object(std::map<std::string, JSValue*> fields);
 
 class JSBool;
 extern JSValue *makeJSBool(bool value);
 
 typedef JSValue *(*JSFunction)(std::vector<JSValue *> args);
 
+extern JSValue * logFunction;
 
 #endif //CPP_LANGUAGE_THING_JSVALUE_H

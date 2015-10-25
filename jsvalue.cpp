@@ -12,37 +12,22 @@
 
 using namespace std;
 
-class JSValue {
-public:
-    virtual std::string toString() = 0;
-    virtual JSValue * operate(std::string op, JSValue *other) = 0;
-    virtual JSValue * rOperateWithNumber(std::string op, JSNumber *left) = 0;
-    virtual JSValue * rOperateWithUndefined(std::string op) = 0;
-    virtual JSValue * get(std::string key) = 0;
-    virtual JSValue * set(std::string key, JSValue *value) {
-        cout << "you can't set " << toString() << ":(\n";
-        exit(123);
-    }
-    virtual bool isTruthy() = 0;
-    virtual JSValue * call(std::vector<JSValue *> args) {
-        cout << "you can't call " << toString() << " :( \n";
-        exit(532);
-    }
-};
 
 class JSNumber : public JSValue {
-public:
     double value;
 
+public:
     JSNumber(double value) : value(value) {}
 
     string toString() {
         return to_string(value);
     }
 
-    JSValue *operate(string op, JSValue *right) {
-//        cout << typeid(*right) << endl;
+    double getValue() {
+        return value;
+    }
 
+    JSValue *operate(string op, JSValue *right) {
         return right->rOperateWithNumber(op, this);
     }
 
@@ -50,19 +35,20 @@ public:
         return new JSNumber(NAN);
     }
 
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
+    JSValue *rOperateWithNumber(string op, JSValue *left) {
+        double otherValue = ((JSNumber *) left)->value;
         if (op == "+")
-            return new JSNumber(left->value + value);
+            return new JSNumber(otherValue + value);
         else if (op == "-")
-            return new JSNumber(left->value - value);
+            return new JSNumber(otherValue - value);
         else if (op == "*")
-            return new JSNumber(left->value * value);
+            return new JSNumber(otherValue * value);
         else if (op == "/")
-            return new JSNumber(left->value / value);
+            return new JSNumber(otherValue / value);
         else if (op == "==")
-            return new JSNumber(left->value == value);
+            return new JSNumber(otherValue == value);
         else if (op == "<")
-            return new JSNumber(left->value < value);
+            return new JSNumber(otherValue < value);
         else
             exit(154);
     }
@@ -93,6 +79,10 @@ public:
     }
 };
 
+JSValue * number(double value) {
+    return new JSNumber(value);
+}
+
 class JSUndefined : public JSValue {
 public:
     string toString() {
@@ -103,7 +93,7 @@ public:
         return right->rOperateWithUndefined(op);
     }
 
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
+    JSValue *rOperateWithNumber(string op, JSValue *left) {
         return new JSNumber(NAN);
     }
 
@@ -121,7 +111,8 @@ public:
 };
 
 
-JSUndefined jsUndefined;
+JSUndefined _jsUndefined = JSUndefined();
+JSValue *jsUndefined = &_jsUndefined;
 
 class JSObject : public JSValue {
     std::map<string, JSValue*> fields;
@@ -138,7 +129,7 @@ public:
         return right->rOperateWithUndefined(op);
     }
 
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
+    JSValue *rOperateWithNumber(string op, JSValue *left) {
         return new JSNumber(NAN);
     }
 
@@ -154,7 +145,7 @@ public:
         if (fields.count(field)) {
             return fields[field];
         }
-        return &jsUndefined;
+        return jsUndefined;
     }
 
     JSValue *set(string field, JSValue *value) {
@@ -162,6 +153,10 @@ public:
         return value;
     }
 };
+
+JSValue * object(std::map<std::string, JSValue*> fields) {
+    return new JSObject(fields);
+}
 
 class JSBool : public JSValue {
     bool value;
@@ -180,19 +175,20 @@ public:
         exit(123);
     }
 
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
+    JSValue *rOperateWithNumber(string op, JSValue *left) {
+        double otherValue = ((JSNumber *) left)->getValue();
         if (op == "+")
-            return new JSNumber(left->value + (int) value);
+            return new JSNumber(value + otherValue);
         else if (op == "-")
-            return new JSNumber(left->value - (int) value);
+            return new JSNumber(value - otherValue);
         else if (op == "*")
-            return new JSNumber(left->value * (int) value);
+            return new JSNumber(value * otherValue);
         else if (op == "/")
-            return new JSNumber(left->value / (int) value);
+            return new JSNumber(value / otherValue);
         else if (op == "==")
-            return new JSNumber(left->value == (int) value);
+            return new JSNumber(value == otherValue);
         else if (op == "<")
-            return new JSNumber(left->value < (int) value);
+            return new JSNumber(value < otherValue);
         else
             exit(154);
     }
@@ -219,7 +215,7 @@ public:
     }
 
     JSValue *get(std::string key) {
-        return &jsUndefined;
+        return jsUndefined;
     }
 };
 
@@ -244,7 +240,7 @@ public:
         exit(123);
     }
 
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
+    JSValue *rOperateWithNumber(string op, JSValue *left) {
         exit(154);
     }
 
@@ -261,7 +257,7 @@ public:
     }
 
     JSValue *get(std::string key) {
-        return &jsUndefined;
+        return jsUndefined;
     }
 };
 
@@ -280,7 +276,7 @@ public:
 //        return right->rOperateWithNumber(op, new JSNumber(value));
     }
 
-    JSValue *rOperateWithNumber(string op, JSNumber *left) {
+    JSValue *rOperateWithNumber(string op, JSValue *left) {
         exit(154);
     }
 
@@ -293,7 +289,21 @@ public:
     }
 
     JSValue *get(std::string key) {
-        return &jsUndefined;
+        return jsUndefined;
     }
 };
 
+JSValue * jsString(std::string value) {
+    return new JSString(value);
+}
+
+JSValue *log(std::vector<JSValue *> args) {
+    for (JSValue * value : args) {
+        cout << value->toString() << "; ";
+    }
+    cout << endl;
+    return jsUndefined;
+}
+
+JSExternalFunction logFunctionObject(&log);
+JSValue * logFunction = &logFunctionObject;
