@@ -3,9 +3,356 @@
 #include <list>
 #include <vector>
 #include <math.h>
-#include "jsvalue.h"
 
 using namespace std;
+
+
+enum JSType { JSNumberType, JSUndefinedType, JSBoolType, JSStringType, JSObjectType, JSExternalFunctionType, JSFunctionType, JSArrayType };
+
+class JSValue {
+public:
+    virtual JSType jsType() = 0;
+    virtual std::string toString() = 0;
+    virtual JSValue * operate(std::string op, JSValue *other) = 0;
+    virtual JSValue * get(std::string key) = 0;
+    virtual JSValue * set(std::string key, JSValue *value) {
+        exit(123);
+    }
+    virtual bool isTruthy() = 0;
+};
+
+class JSNumber;
+class JSUndefined;
+class JSExternalFunction;
+class JSObject;
+
+
+extern JSValue *jsUndefined;
+
+JSValue * number(double value);
+JSValue * jsString(std::string value);
+JSValue * object(std::map<std::string, JSValue*> fields);
+
+class JSBool;
+extern JSValue *makeJSBool(bool value);
+
+typedef JSValue *(*JSExternalFunctionImplementation)(std::vector<JSValue *> args);
+
+extern JSValue * logFunction;
+
+
+
+class JSNumber : public JSValue {
+    double value;
+
+public:
+    JSType jsType() {
+        return JSNumberType;
+    }
+
+    JSNumber(double value) : value(value) {}
+
+    string toString() {
+        return to_string(value);
+    }
+
+    JSValue *operate(std::string op, JSValue *other) {
+        switch (other->jsType())
+        {
+            case JSNumberType: {
+                double otherValue = ((JSNumber *) other)->value;
+                if (op == "+")
+                    return new JSNumber(value + otherValue);
+                if (op == "-")
+                    return new JSNumber(value - otherValue);
+                if (op == "*")
+                    return new JSNumber(value * otherValue);
+                if (op == "/")
+                    return new JSNumber(value / otherValue);
+                if (op == "<")
+                    return makeJSBool(value < otherValue);
+                break;
+            }
+            case JSUndefinedType: {
+                return new JSNumber(NAN);
+            }
+            case JSBoolType: {
+                return operate(op, new JSNumber(other->isTruthy() ? 1 : 0));
+            }
+        }
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
+    double getValue() {
+        return value;
+    }
+
+
+    bool isTruthy() {
+        return value != 0;
+    }
+
+    JSValue *get(std::string key) {
+        exit(153);
+    }
+};
+
+JSValue * number(double value) {
+    return new JSNumber(value);
+}
+
+class JSUndefined : public JSValue {
+public:
+    JSType jsType() {
+        return JSUndefinedType;
+    }
+
+    JSValue *operate(std::string op, JSValue *other) {
+        switch (other->jsType())
+        {
+            case JSNumberType: {
+                return new JSNumber(NAN);
+            }
+            case JSUndefinedType: {
+                return new JSNumber(NAN);
+            }
+            case JSBoolType: {
+                return operate(op, new JSNumber(other->isTruthy() ? 1 : 0));
+            }
+        }
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
+    string toString() {
+        return "undefined";
+    }
+
+    bool isTruthy() {
+        return false;
+    }
+
+    JSValue *get(std::string key) {
+        exit(123);
+    }
+};
+
+
+JSUndefined _jsUndefined = JSUndefined();
+JSValue *jsUndefined = &_jsUndefined;
+
+class JSObject : public JSValue {
+    std::map<string, JSValue*> fields;
+
+public:
+    JSType jsType() {
+        return JSObjectType;
+    }
+
+    JSObject(std::map<string, JSValue*> fields): fields(fields) { }
+
+    JSValue *operate(std::string op, JSValue *other) {
+        switch (other->jsType())
+        {
+            case JSNumberType: {
+                return new JSNumber(NAN);
+            }
+            case JSUndefinedType: {
+                return new JSNumber(NAN);
+            }
+            case JSBoolType: {
+                return operate(op, new JSNumber(other->isTruthy() ? 1 : 0));
+            }
+        }
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
+    string toString() {
+        return "object<...>";
+    }
+
+    bool isTruthy() {
+        return !fields.empty();
+    }
+
+    JSValue *get(string field) {
+        if (fields.count(field)) {
+            return fields[field];
+        }
+        return jsUndefined;
+    }
+
+    JSValue *set(string field, JSValue *value) {
+        fields[field] = value;
+        return value;
+    }
+};
+
+JSValue * object(std::map<std::string, JSValue*> fields) {
+    return new JSObject(fields);
+}
+
+class JSBool : public JSValue {
+    bool value;
+public:
+    JSType jsType() {
+        return JSBoolType;
+    }
+
+    JSValue *operate(std::string op, JSValue *other) {
+        return (new JSNumber(value ? 1 : 0))->operate(op, other);
+    }
+
+    JSBool(bool value) : value(value) {}
+
+    string toString() {
+        return to_string(value);
+    }
+
+    bool isTruthy() {
+        return value;
+    }
+
+    JSValue *get(std::string key) {
+        return jsUndefined;
+    }
+};
+
+JSValue *makeJSBool(bool value) {
+    return new JSBool(value);
+}
+
+class JSExternalFunction : public JSValue {
+    JSExternalFunctionImplementation implementation;
+public:
+    JSType jsType() {
+        return JSExternalFunctionType;
+    }
+
+    JSExternalFunctionImplementation getImplementation() {
+        return implementation;
+    };
+
+    JSExternalFunction(JSExternalFunctionImplementation implementation): implementation(implementation) { };
+
+    string toString() {
+        return "function<something>";
+    }
+
+    JSValue *operate(std::string op, JSValue *other) {
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
+    bool isTruthy() {
+        return true;
+    }
+
+    JSValue *get(std::string key) {
+        return jsUndefined;
+    }
+};
+
+class JSString : public JSValue {
+    string value;
+
+public:
+    JSType jsType() {
+        return JSStringType;
+    }
+
+    JSString(string value): value(value) { }
+
+    JSValue *operate(std::string op, JSValue *other) {
+        if (op == "+") {
+            return new JSString(value + other->toString());
+        }
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
+    string toString() {
+        return value;
+    }
+
+    bool isTruthy() {
+        return value.length() > 0;
+    }
+
+    JSValue *get(std::string key) {
+        return jsUndefined;
+    }
+};
+
+JSValue * jsString(std::string value) {
+    return new JSString(value);
+}
+
+
+class Scope;
+
+class JSStatement;
+JSValue *interpretBlock(vector<JSStatement*> body, Scope *scope);
+
+class JSFunction : public JSValue {
+    std::vector<string> argNames;
+    std::vector<JSStatement *> statements;
+public:
+    JSType jsType() {
+        return JSFunctionType;
+    }
+
+    JSFunction(const vector<string> &argNames, std::vector<JSStatement *> statements) : argNames(argNames), statements(statements) { }
+
+    std::vector<string> getArgNames() {
+        return argNames;
+    }
+
+    std::vector<JSStatement *> getStatements() {
+        return statements;
+    }
+
+    JSValue *operate(std::string op, JSValue *other) {
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
+    string toString() {
+        return "<function...>";
+    }
+
+    bool isTruthy() {
+        return true;
+    }
+
+    JSValue *get(std::string key) {
+        return jsUndefined;
+    }
+};
+
+
+////// STANDARD LIBRARY
+
+
+JSValue *log(std::vector<JSValue *> args) {
+    for (JSValue * value : args) {
+        cout << value->toString() << " ";
+    }
+    cout << endl;
+    return jsUndefined;
+}
+
+JSExternalFunction logFunctionObject(&log);
+JSValue * logFunction = &logFunctionObject;
+
+
+
+
+
+
+
 
 
 
@@ -14,6 +361,8 @@ class Scope {
     std::map<string, JSValue*> values;
 
 public:
+    Scope(Scope *parent): parent(parent) {}
+
     string toString() {
         string outputString = "Scope(";
 
@@ -43,7 +392,16 @@ public:
         else
             parent->setValue(name, value);
     }
+
+    void declareValue(string name, JSValue *value) {
+        // shadow if necessary
+        values[name] = value;
+    }
 };
+
+
+
+
 
 class JSExpression {
 public:
@@ -87,13 +445,13 @@ public:
     }
 };
 
-class JSBinaryOperator : public JSExpression {
+class JSBinOpExpr : public JSExpression {
     string op;
     JSExpression *lhs;
     JSExpression *rhs;
 
 public:
-    JSBinaryOperator(string op, JSExpression *lhs, JSExpression *rhs): op(op), lhs(lhs), rhs(rhs) {}
+    JSBinOpExpr(string op, JSExpression *lhs, JSExpression *rhs): op(op), lhs(lhs), rhs(rhs) {}
 
     JSValue *evaluate(Scope *scope) {
         JSValue *lhsValue = lhs->evaluate(scope);
@@ -106,20 +464,42 @@ public:
     }
 };
 
-class JSFunctionCall : public JSExpression {
+class JSFunctionCallExpression : public JSExpression {
     JSExpression *lhs;
     vector<JSExpression *>rhs;
 
 public:
-    JSFunctionCall(JSExpression *lhs, vector<JSExpression *>rhs): lhs(lhs), rhs(rhs) {}
+    JSFunctionCallExpression(JSExpression *lhs, vector<JSExpression *>rhs): lhs(lhs), rhs(rhs) {}
 
     JSValue *evaluate(Scope *scope) {
         JSValue *lhsValue = lhs->evaluate(scope);
-        vector<JSValue *> args;
-        for (JSExpression *x: rhs) {
-            args.push_back(x->evaluate(scope));
+
+        if (lhsValue->jsType() == JSExternalFunctionType) {
+            vector<JSValue *> args;
+            for (JSExpression *x: rhs) {
+                args.push_back(x->evaluate(scope));
+            }
+
+            JSExternalFunctionImplementation implementation = ((JSExternalFunction *) lhsValue)->getImplementation();
+
+            return implementation(args);
         }
-        return lhsValue->call(args);
+        else if (lhsValue->jsType() == JSFunctionType) {
+            JSFunction *functionValue = (JSFunction *) lhsValue;
+
+            Scope *newScope = new Scope(scope);
+
+            for (int i = 0; i < functionValue->getArgNames().size(); i++) {
+                newScope->declareValue(functionValue->getArgNames()[i], rhs[i]->evaluate(scope));
+            }
+
+            JSValue *result = interpretBlock(functionValue->getStatements(), newScope);
+            return (result == nullptr) ? jsUndefined : result;
+        }
+        else {
+            cout << "trying to call " << lhsValue->toString() << ", which can't be called :(" << endl;
+            exit(123);
+        }
     }
 
     string toString() {
@@ -169,12 +549,14 @@ public:
     }
 };
 
+
+
 class JSStatement {
-    virtual void run(Scope *scope) = 0;
+    virtual JSValue * run(Scope *scope) = 0;
 
 public:
-    void runStatement(Scope *scope) {
-        run(scope);
+    JSValue *runStatement(Scope *scope) {
+        return run(scope);
     }
 
     virtual string toString() = 0;
@@ -183,8 +565,9 @@ public:
 class JSExpressionStatement : public JSStatement {
     JSExpression * expression;
 
-    void run(Scope *scope) {
+    JSValue * run(Scope *scope) {
         expression->evaluate(scope);
+        return NULL;
     }
 
 public:
@@ -199,12 +582,14 @@ class JSWhileStatement : public JSStatement {
     JSExpression *condition;
     vector<JSStatement *> body;
 
-    void run(Scope *scope) {
+    JSValue * run(Scope *scope) {
         while (condition->evaluate(scope)->isTruthy()) {
-            for (JSStatement *x: body) {
-                x->runStatement(scope);
+            JSValue *result = interpretBlock(body, scope);
+            if (result != NULL) {
+                return result;
             }
         }
+        return NULL;
     }
 
 public:
@@ -220,6 +605,22 @@ public:
     }
 };
 
+class JSReturnStatement : public JSStatement {
+    JSExpression *value;
+
+    JSValue * run(Scope *scope) {
+        return value->evaluate(scope);
+    }
+
+public:
+    JSReturnStatement(JSExpression *value): value(value) { }
+
+    string toString() {
+        return "return " + value->toString() + ";\n";
+    }
+};
+
+
 class JSProgram {
     vector<JSStatement *> code;
 
@@ -227,9 +628,7 @@ public:
     JSProgram(vector<JSStatement *> code): code(code) {}
 
     void run(Scope *scope) {
-        for (JSStatement *statement : code) {
-            statement->runStatement(scope);
-        }
+        interpretBlock(code, scope);
     }
 
     string toString() {
@@ -242,8 +641,26 @@ public:
     }
 };
 
+JSValue *interpretBlock(vector<JSStatement *>body, Scope *scope) {
+    for (JSStatement *statement : body) {
+        JSValue * result = statement->runStatement(scope);
+        if (result != NULL) {
+            return result;
+        }
+    }
+    return NULL;
+}
+
+JSStatement *mkSetStmtFromValue(string name, JSValue *value) {
+    return new JSExpressionStatement(new JSAssignmentExpression(name, new JSValueExpression(value)));
+}
+
+JSStatement *mkSetStmtFromExpr(string name, JSExpression *value) {
+    return new JSExpressionStatement(new JSAssignmentExpression(name, value));
+}
+
 int main() {
-    Scope *scope = new Scope();
+    Scope *scope = new Scope(NULL);
 
     std::map<string, JSValue*> consoleMethods;
     consoleMethods["log"] = logFunction;
@@ -251,22 +668,17 @@ int main() {
 
     scope->setValue("console", console);
 
-    JSStatement * firstLine = new JSExpressionStatement(new JSAssignmentExpression("x",
-         (JSExpression *) new JSValueExpression(number(2))));
+    JSStatement * firstLine = mkSetStmtFromValue("x", number(1));
 
-    JSStatement * increment = new JSExpressionStatement(
-            new JSAssignmentExpression(
-                    "x",
-                    new JSBinaryOperator("+", new JSValueExpression(number(3)), new JSVariableExpression("x"))));
+    JSStatement * increment = mkSetStmtFromExpr("x", new JSBinOpExpr("+", new JSValueExpression(number(3)), new JSVariableExpression("x")));
 
-
-    JSExpression * condition = new JSBinaryOperator("<", new JSVariableExpression("x"), new JSValueExpression(number(10)));
+    JSExpression * condition = new JSBinOpExpr("<", new JSVariableExpression("x"), new JSVariableExpression("y"));
 
     vector<JSExpression *> logArgs;
-    logArgs.push_back(new JSBinaryOperator("+", new JSValueExpression(jsString("the value is ")), new JSVariableExpression("x")));
+    logArgs.push_back(new JSBinOpExpr("+", new JSValueExpression(jsString("the value is ")), new JSVariableExpression("x")));
 
     JSStatement * lastLine = (JSStatement *) new JSExpressionStatement(
-            new JSFunctionCall(
+            new JSFunctionCallExpression(
                     new JSFieldAccessExpression(new JSVariableExpression("console"), new JSValueExpression(jsString("log"))),
                     logArgs)
     );
@@ -275,9 +687,22 @@ int main() {
 
     JSWhileStatement * whileStatement = new JSWhileStatement(condition, body);
 
-    vector<JSStatement *> programBody { firstLine, whileStatement };
+    const vector<JSStatement *> programBody { firstLine, whileStatement };
 
-    JSProgram * program = new JSProgram(programBody);
+    const vector<string> argNames = { "y" };
+
+    JSFunction * mainFunction = new JSFunction(argNames, programBody);
+
+    const vector<JSExpression *> args = { new JSValueExpression(number(10000000)) };
+
+    JSStatement * callMain = new JSExpressionStatement(
+                    new JSFunctionCallExpression(
+                            new JSVariableExpression("f"), args
+                            ));
+
+    vector<JSStatement *> programCode = { mkSetStmtFromValue("f", mainFunction), callMain };
+
+    JSProgram * program = new JSProgram(programCode);
 
     cout << program->toString();
 
