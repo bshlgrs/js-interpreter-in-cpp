@@ -14,8 +14,6 @@ public:
     JSType jsType;
     virtual std::string toString() = 0;
     virtual JSValue * operate(std::string op, JSValue *other) = 0;
-    virtual JSValue * rOperateWithNumber(std::string op, JSValue *left) = 0;
-    virtual JSValue * rOperateWithUndefined(std::string op) = 0;
     virtual JSValue * get(std::string key) = 0;
     virtual JSValue * set(std::string key, JSValue *value) {
         exit(123);
@@ -27,10 +25,11 @@ public:
 };
 
 class JSNumber;
-
 class JSUndefined;
 class JSExternalFunction;
 class JSObject;
+
+extern JSValue *jsUndefined;
 
 JSValue * number(double value);
 JSValue * jsString(std::string value);

@@ -251,10 +251,10 @@ int main() {
 
     scope->setValue("console", console);
 
-    JSStatement * firstLine = (JSStatement *) new JSExpressionStatement(new JSAssignmentExpression("x",
+    JSStatement * firstLine = new JSExpressionStatement(new JSAssignmentExpression("x",
          (JSExpression *) new JSValueExpression(number(2))));
 
-    JSStatement * increment = (JSStatement *) new JSExpressionStatement(
+    JSStatement * increment = new JSExpressionStatement(
             new JSAssignmentExpression(
                     "x",
                     new JSBinaryOperator("+", new JSValueExpression(number(3)), new JSVariableExpression("x"))));
@@ -263,7 +263,7 @@ int main() {
     JSExpression * condition = new JSBinaryOperator("<", new JSVariableExpression("x"), new JSValueExpression(number(10)));
 
     vector<JSExpression *> logArgs;
-    logArgs.push_back(new JSVariableExpression("x"));
+    logArgs.push_back(new JSBinaryOperator("+", new JSValueExpression(jsString("the value is ")), new JSVariableExpression("x")));
 
     JSStatement * lastLine = (JSStatement *) new JSExpressionStatement(
             new JSFunctionCall(
@@ -271,15 +271,11 @@ int main() {
                     logArgs)
     );
 
-    vector<JSStatement *> body;
-    body.push_back(increment);
-    body.push_back(lastLine);
+    vector<JSStatement *> body { increment, lastLine };
 
     JSWhileStatement * whileStatement = new JSWhileStatement(condition, body);
 
-    vector<JSStatement *> programBody;
-    programBody.push_back(firstLine);
-    programBody.push_back((JSStatement *) whileStatement);
+    vector<JSStatement *> programBody { firstLine, whileStatement };
 
     JSProgram * program = new JSProgram(programBody);
 

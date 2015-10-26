@@ -25,52 +25,38 @@ public:
         return to_string(value);
     }
 
+    JSValue *operate(std::string op, JSValue *other) {
+        switch (other->jsType)
+        {
+            case JSNumberType: {
+                double otherValue = ((JSNumber *) other)->value;
+                if (op == "+")
+                    return new JSNumber(value + otherValue);
+                if (op == "-")
+                    return new JSNumber(value - otherValue);
+                if (op == "*")
+                    return new JSNumber(value * otherValue);
+                if (op == "/")
+                    return new JSNumber(value / otherValue);
+                if (op == "<")
+                    return makeJSBool(value < otherValue);
+                break;
+            }
+            case JSUndefinedType: {
+                return new JSNumber(NAN);
+            }
+            case JSBoolType: {
+                return operate(op, new JSNumber(other->isTruthy() ? 1 : 0));
+            }
+        }
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
     double getValue() {
         return value;
     }
 
-    JSValue *operate(string op, JSValue *right) {
-        return right->rOperateWithNumber(op, this);
-    }
-
-    JSValue *rOperateWithUndefined(string op, JSNumber *right) {
-        return new JSNumber(NAN);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSValue *left) {
-        double otherValue = ((JSNumber *) left)->value;
-        if (op == "+")
-            return new JSNumber(otherValue + value);
-        else if (op == "-")
-            return new JSNumber(otherValue - value);
-        else if (op == "*")
-            return new JSNumber(otherValue * value);
-        else if (op == "/")
-            return new JSNumber(otherValue / value);
-        else if (op == "==")
-            return new JSNumber(otherValue == value);
-        else if (op == "<")
-            return new JSNumber(otherValue < value);
-        else
-            exit(154);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        if (op == "+")
-            return new JSNumber(NAN);
-        else if (op == "-")
-            return new JSNumber(NAN);
-        else if (op == "*")
-            return new JSNumber(NAN);
-        else if (op == "/")
-            return new JSNumber(NAN);
-        else if (op == "==")
-            return makeJSBool(false);
-        else if (op == "<")
-            return makeJSBool(false);
-        else
-            exit(154);
-    }
 
     bool isTruthy() {
         return value != 0;
@@ -89,20 +75,25 @@ class JSUndefined : public JSValue {
 public:
     JSType jsType = JSUndefinedType;
 
+    JSValue *operate(std::string op, JSValue *other) {
+        switch (other->jsType)
+        {
+            case JSNumberType: {
+               return new JSNumber(NAN);
+            }
+            case JSUndefinedType: {
+                return new JSNumber(NAN);
+            }
+            case JSBoolType: {
+                return operate(op, new JSNumber(other->isTruthy() ? 1 : 0));
+            }
+        }
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
     string toString() {
         return "undefined";
-    }
-
-    JSValue *operate(string op, JSValue *right) {
-        return right->rOperateWithUndefined(op);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSValue *left) {
-        return new JSNumber(NAN);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        exit(354);
     }
 
     bool isTruthy() {
@@ -126,21 +117,25 @@ public:
 
     JSObject(std::map<string, JSValue*> fields): fields(fields) { }
 
+    JSValue *operate(std::string op, JSValue *other) {
+        switch (other->jsType)
+        {
+            case JSNumberType: {
+                return new JSNumber(NAN);
+            }
+            case JSUndefinedType: {
+                return new JSNumber(NAN);
+            }
+            case JSBoolType: {
+                return operate(op, new JSNumber(other->isTruthy() ? 1 : 0));
+            }
+        }
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
     string toString() {
         return "object<...>";
-    }
-
-    // these are wrong :/
-    JSValue *operate(string op, JSValue *right) {
-        return right->rOperateWithUndefined(op);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSValue *left) {
-        return new JSNumber(NAN);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        exit(354);
     }
 
     bool isTruthy() {
@@ -169,53 +164,14 @@ class JSBool : public JSValue {
 public:
     JSType jsType = JSBoolType;
 
+    JSValue *operate(std::string op, JSValue *other) {
+       return (new JSNumber(value ? 1 : 0))->operate(op, other);
+    }
+
     JSBool(bool value) : value(value) {}
 
     string toString() {
         return to_string(value);
-    }
-
-    JSValue *operate(string op, JSValue *right) {
-        return right->rOperateWithNumber(op, new JSNumber(value));
-    }
-
-    JSValue *rOperateWithUndefined(string op, JSNumber *right) {
-        exit(123);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSValue *left) {
-        double otherValue = ((JSNumber *) left)->getValue();
-        if (op == "+")
-            return new JSNumber(value + otherValue);
-        else if (op == "-")
-            return new JSNumber(value - otherValue);
-        else if (op == "*")
-            return new JSNumber(value * otherValue);
-        else if (op == "/")
-            return new JSNumber(value / otherValue);
-        else if (op == "==")
-            return new JSNumber(value == otherValue);
-        else if (op == "<")
-            return new JSNumber(value < otherValue);
-        else
-            exit(154);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        if (op == "+")
-            return new JSNumber(NAN);
-        else if (op == "-")
-            return new JSNumber(NAN);
-        else if (op == "*")
-            return new JSNumber(NAN);
-        else if (op == "/")
-            return new JSNumber(NAN);
-        else if (op == "==")
-            return new JSBool(false);
-        else if (op == "<")
-            return new JSBool(false);
-        else
-            exit(154);
     }
 
     bool isTruthy() {
@@ -242,20 +198,9 @@ public:
         return "function<something>";
     }
 
-    JSValue *operate(string op, JSValue *right) {
-        exit(123);
-    }
-
-    JSValue *rOperateWithUndefined(string op, JSNumber *right) {
-        exit(123);
-    }
-
-    JSValue *rOperateWithNumber(string op, JSValue *left) {
-        exit(154);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        exit(154);
+    JSValue *operate(std::string op, JSValue *other) {
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
     }
 
     JSValue * call(std::vector<JSValue *> args) {
@@ -279,22 +224,16 @@ public:
 
     JSString(string value): value(value) { }
 
+    JSValue *operate(std::string op, JSValue *other) {
+        if (op == "+") {
+            return new JSString(value + other->toString());
+        }
+        cout << "note: unimplemented operate: " << toString() << op << other->toString() << endl;
+        return jsUndefined;
+    }
+
     string toString() {
         return value;
-    }
-
-    JSValue *operate(string op, JSValue *right) {
-
-        exit(124);
-//        return right->rOperateWithNumber(op, new JSNumber(value));
-    }
-
-    JSValue *rOperateWithNumber(string op, JSValue *left) {
-        exit(154);
-    }
-
-    JSValue *rOperateWithUndefined(string op) {
-        exit(154);
     }
 
     bool isTruthy() {
@@ -312,7 +251,7 @@ JSValue * jsString(std::string value) {
 
 JSValue *log(std::vector<JSValue *> args) {
     for (JSValue * value : args) {
-        cout << value->toString() << "; ";
+        cout << value->toString() << " ";
     }
     cout << endl;
     return jsUndefined;
