@@ -7,8 +7,11 @@
 
 #include <vector>
 
+enum JSType { JSNumberType, JSUndefinedType, JSBoolType, JSStringType, JSObjectType, JSFunctionType, JSArrayType };
+
 class JSValue {
 public:
+    JSType jsType;
     virtual std::string toString() = 0;
     virtual JSValue * operate(std::string op, JSValue *other) = 0;
     virtual JSValue * rOperateWithNumber(std::string op, JSValue *left) = 0;

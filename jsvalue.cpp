@@ -17,6 +17,8 @@ class JSNumber : public JSValue {
     double value;
 
 public:
+    JSType jsType = JSNumberType;
+
     JSNumber(double value) : value(value) {}
 
     string toString() {
@@ -85,6 +87,8 @@ JSValue * number(double value) {
 
 class JSUndefined : public JSValue {
 public:
+    JSType jsType = JSUndefinedType;
+
     string toString() {
         return "undefined";
     }
@@ -118,6 +122,8 @@ class JSObject : public JSValue {
     std::map<string, JSValue*> fields;
 
 public:
+    JSType jsType = JSObjectType;
+
     JSObject(std::map<string, JSValue*> fields): fields(fields) { }
 
     string toString() {
@@ -161,6 +167,8 @@ JSValue * object(std::map<std::string, JSValue*> fields) {
 class JSBool : public JSValue {
     bool value;
 public:
+    JSType jsType = JSBoolType;
+
     JSBool(bool value) : value(value) {}
 
     string toString() {
@@ -226,6 +234,8 @@ JSValue *makeJSBool(bool value) {
 class JSExternalFunction : public JSValue {
     JSFunction function;
 public:
+    JSType jsType = JSFunctionType;
+
     JSExternalFunction(JSFunction function): function(function) { };
 
     string toString() {
@@ -265,6 +275,8 @@ class JSString : public JSValue {
     string value;
 
 public:
+    JSType jsType = JSStringType;
+
     JSString(string value): value(value) { }
 
     string toString() {
@@ -272,6 +284,7 @@ public:
     }
 
     JSValue *operate(string op, JSValue *right) {
+
         exit(124);
 //        return right->rOperateWithNumber(op, new JSNumber(value));
     }

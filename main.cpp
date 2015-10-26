@@ -38,7 +38,10 @@ public:
     }
 
     void setValue(string name, JSValue *value) {
-        values[name] = value;
+        if (parent == NULL || parent->getValue(name) == NULL)
+            values[name] = value;
+        else
+            parent->setValue(name, value);
     }
 };
 
