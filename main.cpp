@@ -11,6 +11,11 @@ enum JSType { JSNumberType, JSUndefinedType, JSBoolType, JSStringType, JSObjectT
 
 class JSValue {
 public:
+    static int instance_counter;
+    JSValue() {
+        cout << "I'M MAKING A THING" << endl;
+        instance_counter ++;
+    }
     virtual JSType jsType() = 0;
     virtual std::string toString() = 0;
     virtual JSValue * operate(std::string op, JSValue *other) = 0;
@@ -20,6 +25,8 @@ public:
     }
     virtual bool isTruthy() = 0;
 };
+
+int JSValue::instance_counter = 0;
 
 class JSNumber;
 class JSUndefined;
@@ -454,9 +461,17 @@ public:
     JSBinOpExpr(string op, JSExpression *lhs, JSExpression *rhs): op(op), lhs(lhs), rhs(rhs) {}
 
     JSValue *evaluate(Scope *scope) {
-        JSValue *lhsValue = lhs->evaluate(scope);
-        JSValue *rhsValue = rhs->evaluate(scope);
-        return lhsValue->operate(op, rhsValue);
+        if (op == "&&" || op == "||") {
+            JSValue *lhsValue = lhs->evaluate(scope);
+            JSValue *rhsValue = rhs->evaluate(scope);
+            return lhsValue->operate(op, rhsValue);
+        } else if (op == "||") {
+
+        } else {
+            JSValue *lhsValue = lhs->evaluate(scope);
+            JSValue *rhsValue = rhs->evaluate(scope);
+            return lhsValue->operate(op, rhsValue);
+        }
     }
 
     string toString() {
@@ -659,7 +674,7 @@ JSStatement *mkSetStmtFromExpr(string name, JSExpression *value) {
     return new JSExpressionStatement(new JSAssignmentExpression(name, value));
 }
 
-int main() {
+int runExampleProgram() {
     Scope *scope = new Scope(NULL);
 
     std::map<string, JSValue*> consoleMethods;
@@ -708,6 +723,13 @@ int main() {
 
     program->run(scope);
 
+    cout << JSValue::instance_counter << endl;
+
     cout << scope->toString() << endl;
+    return 0;
+}
+
+int main () {
+    runExampleProgram();
     return 0;
 }
